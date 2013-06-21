@@ -6,6 +6,8 @@ Usage:
 - make sure GMP PHP extension is installed
 - require 'addrgen.php'; in your script
 - use addr_from_mpk($mpk, $index) function
+  - $mpk is your Master Public Key (64 bit = 128 hex digits)
+  - $index is numeric address index to use (0, 1, ...)
   (check test.php for usage example)
 
 Based on:

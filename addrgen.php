@@ -73,12 +73,12 @@ class Point {
 
 		if (isset($this->curve) && ($this->curve instanceof Curve)) {
 			if (!$this->curve->contains($this->x, $this->y)) {
-				throw new ErrorException("Curve" . print_r($this->curve, true) . " does not contain point ( " . $x . " , " . $y . " )");
+				throw new ErrorException('Curve does not contain point');
 			}
 
 			if ($this->order != null) {
 				if (self::cmp(self::mul($order, $this), self::$infinity) != 0) {
-					throw new ErrorException("SELF * ORDER MUST EQUAL INFINITY");
+					throw new ErrorException('Self*Order must equal infinity');
 				}
 			}
 		}
@@ -128,7 +128,7 @@ class Point {
 			$p3 = new Point($p1->curve, $x3, $y3);
 			return $p3;
 		} else {
-			throw new ErrorException("Elliptic Curves do not match.");
+			throw new ErrorException('Elliptic curves do not match');
 		}
 	}
 
