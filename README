@@ -1,0 +1,17 @@
+Minimalistic Bitcoin Address Generator for PHP
+==============================================
+
+Usage:
+
+- make sure GMP PHP extension is installed
+- require 'addrgen.php'; in your script
+- use addr_from_mpk($mpk, $index) function
+  (check test.php for usage example)
+
+Based on:
+* Pure PHP Elliptic Curve Cryptography Library by Matej Danter
+  https://github.com/mdanter/phpecc
+* mpkgen by Chris Savery
+  https://github.com/bkkcoins/misc/tree/master/mpkgen/php
+
+Donations welcome at 1PuRV7zVXrajGxHJ6LJLccgDYz4hNcVPfS
