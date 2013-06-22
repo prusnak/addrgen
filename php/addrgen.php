@@ -220,7 +220,7 @@ function addr_from_mpk($mpk, $index)
 	$z = gmp_init(hash('sha256', hash('sha256', $index . ':0:' . pack('H*', $mpk), TRUE)), 16);
 
 	// generate the new public key based off master and sequence points
-	$pt = Point::add(new Point($curve, $x, $y), Point::mul($z, $gen) );
+	$pt = Point::add(new Point($curve, $x, $y), Point::mul($z, $gen));
 	$keystr = pack('H*', '04'
 	        . str_pad(gmp_strval($pt->getX(), 16), 64, '0', STR_PAD_LEFT)
 	        . str_pad(gmp_strval($pt->getY(), 16), 64, '0', STR_PAD_LEFT));
