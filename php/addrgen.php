@@ -193,14 +193,6 @@ class Point {
 	public function getY() {
 		return $this->y;
 	}
-
-	public function getCurve() {
-		return $this->curve;
-	}
-
-	public function getOrder() {
-		return $this->order;
-	}
 }
 
 function addr_from_mpk($mpk, $index)
