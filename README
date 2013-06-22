@@ -1,9 +1,9 @@
-Minimalistic Bitcoin Address Generator
+Deterministic Bitcoin Address Generator
 ======================================
 
 PHP usage:
 
-- make sure you have gmp extension is installed
+- make sure you have gmp extension installed
 - require 'addrgen.php'; in your script
 - use addr_from_mpk($mpk, $index) function
   - $mpk is your Master Public Key (64 bit = 128 hex digits)
