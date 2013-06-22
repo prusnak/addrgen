@@ -40,7 +40,7 @@ class Curve {
 	}
 
 	public static function cmp(Curve $cp1, Curve $cp2) {
-		return (gmp_cmp($cp1->a, $cp2->a) || gmp_cmp($cp1->b, $cp2->b) || gmp_cmp($cp1->prime, $cp2->prime));
+		return gmp_cmp($cp1->a, $cp2->a) || gmp_cmp($cp1->b, $cp2->b) || gmp_cmp($cp1->prime, $cp2->prime);
 	}
 
 	public function getA() {
@@ -97,7 +97,7 @@ class Point {
 				if (!($p1 instanceof Point))
 					return 0;
 			}
-			return (gmp_cmp($p1->x, $p2->x) || gmp_cmp($p1->y, $p2->y) || Curve::cmp($p1->curve, $p2->curve));
+			return gmp_cmp($p1->x, $p2->x) || gmp_cmp($p1->y, $p2->y) || Curve::cmp($p1->curve, $p2->curve);
 	}
 
 	public static function add($p1, $p2) {
@@ -165,7 +165,7 @@ class Point {
 	public static function leftmost_bit($x) {
 		if (gmp_cmp($x, 0) > 0) {
 			$result = 1;
-			while (gmp_cmp($result, $x) < 0 || gmp_cmp($result, $x) == 0) {
+			while (gmp_cmp($result, $x) <= 0) {
 				$result = gmp_mul(2, $result);
 			}
 			return gmp_div($result, 2);
@@ -206,11 +206,11 @@ class Point {
 function addr_from_mpk($mpk, $index)
 {
 	// create the ecc curve
-	$_p  = gmp_init('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 16);
-	$_r  = gmp_init('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141', 16);
-	$_b  = gmp_init('0x0000000000000000000000000000000000000000000000000000000000000007', 16);
-	$_Gx = gmp_init('0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798', 16);
-	$_Gy = gmp_init('0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8', 16);
+	$_p  = gmp_init('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 16);
+	$_r  = gmp_init('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141', 16);
+	$_b  = gmp_init('0000000000000000000000000000000000000000000000000000000000000007', 16);
+	$_Gx = gmp_init('79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798', 16);
+	$_Gy = gmp_init('483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8', 16);
 	$curve = new Curve($_p, 0, $_b);
 	$gen = new Point($curve, $_Gx, $_Gy, $_r);
 
@@ -221,18 +221,20 @@ function addr_from_mpk($mpk, $index)
 
 	// generate the new public key based off master and sequence points
 	$pt = Point::add(new Point($curve, $x, $y), Point::mul($z, $gen) );
-	$keystr = "\x04"
-	        . pack('H*', str_pad(gmp_strval($pt->getX(), 16), 64, '0', STR_PAD_LEFT))
-	        . pack('H*', str_pad(gmp_strval($pt->getY(), 16), 64, '0', STR_PAD_LEFT));
-	$vh160 =  "\x00" . hash('ripemd160', hash('sha256', $keystr, TRUE), TRUE);
-	$addr = $vh160 . substr(hash('sha256', hash('sha256', $vh160, TRUE), TRUE), 0, 4);
+	$keystr = pack('H*', '04'
+	        . str_pad(gmp_strval($pt->getX(), 16), 64, '0', STR_PAD_LEFT)
+	        . str_pad(gmp_strval($pt->getY(), 16), 64, '0', STR_PAD_LEFT));
+	$vh160 =  '00' . hash('ripemd160', hash('sha256', $keystr, TRUE));
+	$addr = $vh160 . substr(hash('sha256', hash('sha256', pack('H*', $vh160), TRUE)), 0, 8);
 
-	$num = reset(unpack('H*', $addr));
-	$num = gmp_strval(gmp_init($num, 16), 58);
+	$num = gmp_strval(gmp_init($addr, 16), 58);
 	$num = strtr($num, '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv', '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz');
 
 	$pad = ''; $n = 0;
-	while ($addr[$n++] == "\x00") $pad .= '1';
+	while ($addr[$n] == '0' && $addr[$n+1] == '0') {
+		$pad .= '1';
+		$n += 2;
+	}
 
 	return $pad . $num;
 }
