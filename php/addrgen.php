@@ -113,7 +113,7 @@ class Point {
 		}
 
 		if (Curve::cmp($p1->curve, $p2->curve) == 0) {
-			if (gmp_mod(gmp_cmp($p1->x, $p2->x), $p1->curve->getPrime()) == 0) {
+			if (gmp_cmp($p1->x, $p2->x) == 0) {
 				if (gmp_mod(gmp_add($p1->y, $p2->y), $p1->curve->getPrime()) == 0) {
 					return self::$infinity;
 				} else {
