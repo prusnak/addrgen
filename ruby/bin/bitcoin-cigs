@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'bitcoin-cigs'
+
+@options = {}
+
+opt_parser = OptionParser.new do |opt|
+  opt.banner = "Usage: bitcoin-cigs command [arguments ...] [options ...]"
+  opt.separator  ""
+  opt.separator  "Commands"
+  opt.separator  "     verify bitcoin-address signature [message-file]"
+  opt.separator  "     sign private-key [message-file]"
+  opt.separator  ""
+  opt.separator  "Options"
+  opt.on("-m", "--message MESSAGE", "Message can also be read from STDIN") do |message|
+    @options[:message] = message
+  end
+  opt.on("-S", "--no-strip", "Do not strip leading and trailing whitespace from message (stripped by default)") do
+    @options[:no_strip] = true
+  end
+end
+
+opt_parser.parse!
+
+def message
+  message = @options[:message] || ARGF.read
+  message.strip! unless @options[:no_strip]
+  
+  message
+end
+
+begin
+  case ARGV.shift
+  when "verify"
+    address = ARGV.shift or raise ArgumentError
+    signature = ARGV.shift or raise ArgumentError
+    ::BitcoinCigs.verify_message!(address, signature, message)
+  when "sign"
+    private_key = ARGV.shift or raise ArgumentError
+    puts ::BitcoinCigs.sign_message!(private_key, message)
+  else
+    raise ArgumentError
+  end
+  exit 0
+rescue ::BitcoinCigs::Error => e
+  puts "Error: #{e}"
+  exit 2
+rescue ArgumentError
+  puts opt_parser
+  exit 1
+end
