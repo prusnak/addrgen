@@ -40,4 +40,3 @@ Donations welcome at 1PuRV7zVXrajGxHJ6LJLccgDYz4hNcVPfS
 # Copyright
 
 See LICENSE.txt for further details.
-
