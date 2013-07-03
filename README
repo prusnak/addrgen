@@ -3,7 +3,9 @@ Deterministic Bitcoin Address Generator
 
 PHP usage:
 
-- make sure you have gmp extension installed
+- make sure you have PHP 5.3.2 or later installed
+- make sure you have GMP 4.2.0 or later installed
+- make sure you have GMP PHP extension installed
 - require 'addrgen.php'; in your script
 - use addr_from_mpk($mpk, $index) function
   - $mpk is your Master Public Key (64 bit = 128 hex digits)
@@ -13,7 +15,8 @@ PHP usage:
 
 Ruby usage:
 
-- make sure you have gmp rubygem installed
+- make sure you have GMP 4.2.0 or later installed
+- make sure you have GMP RubyGem installed
 - require './addrgen' in your script
 - use addr_from_mpk(mpk, idx) function
   - mpk is your Master Public Key (64 bit = 128 hex digits)
