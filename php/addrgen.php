@@ -25,10 +25,6 @@
 
 class Curve {
 
-	protected $a = 0;
-	protected $b = 0;
-	protected $prime = 0;
-
 	public function __construct($prime, $a, $b) {
 		$this->a = $a;
 		$this->b = $b;
@@ -42,27 +38,11 @@ class Curve {
 	public static function cmp(Curve $cp1, Curve $cp2) {
 		return gmp_cmp($cp1->a, $cp2->a) || gmp_cmp($cp1->b, $cp2->b) || gmp_cmp($cp1->prime, $cp2->prime);
 	}
-
-	public function getA() {
-		return $this->a;
-	}
-
-	public function getB() {
-		return $this->b;
-	}
-
-	public function getPrime() {
-		return $this->prime;
-	}
 }
 
 class Point {
 
-	public $curve;
-	public $x;
-	public $y;
-	public $order;
-	public static $infinity = 'infinity';
+	const INFINITY = 'infinity';
 
 	public function __construct(Curve $curve, $x, $y, $order = null) {
 		$this->curve = $curve;
@@ -77,7 +57,7 @@ class Point {
 			}
 
 			if ($this->order != null) {
-				if (self::cmp(self::mul($order, $this), self::$infinity) != 0) {
+				if (self::cmp(self::mul($order, $this), self::INFINITY) != 0) {
 					throw new ErrorException('Self*Order must equal infinity');
 				}
 			}
@@ -102,31 +82,30 @@ class Point {
 
 	public static function add($p1, $p2) {
 
-		if (self::cmp($p2, self::$infinity) == 0 && ($p1 instanceof Point)) {
+		if (self::cmp($p2, self::INFINITY) == 0 && ($p1 instanceof Point)) {
 			return $p1;
 		}
-		if (self::cmp($p1, self::$infinity) == 0 && ($p2 instanceof Point)) {
+		if (self::cmp($p1, self::INFINITY) == 0 && ($p2 instanceof Point)) {
 			return $p2;
 		}
-		if (self::cmp($p1, self::$infinity) == 0 && self::cmp($p2, self::$infinity) == 0) {
-			return self::$infinity;
+		if (self::cmp($p1, self::INFINITY) == 0 && self::cmp($p2, self::INFINITY) == 0) {
+			return self::INFINITY;
 		}
 
 		if (Curve::cmp($p1->curve, $p2->curve) == 0) {
 			if (gmp_cmp($p1->x, $p2->x) == 0) {
-				if (gmp_mod(gmp_add($p1->y, $p2->y), $p1->curve->getPrime()) == 0) {
-					return self::$infinity;
+				if (gmp_mod(gmp_add($p1->y, $p2->y), $p1->curve->prime) == 0) {
+					return self::INFINITY;
 				} else {
 					return self::double($p1);
 				}
 			}
 
-			$p = $p1->curve->getPrime();
+			$p = $p1->curve->prime;
 			$l = gmp_mul(gmp_sub($p2->y, $p1->y), gmp_invert(gmp_sub($p2->x, $p1->x), $p));
 			$x3 = gmp_mod(gmp_sub(gmp_sub(gmp_pow($l, 2), $p1->x), $p2->x), $p);
 			$y3 = gmp_mod(gmp_sub(gmp_mul($l, gmp_sub($p1->x, $x3)), $p1->y), $p);
-			$p3 = new Point($p1->curve, $x3, $y3);
-			return $p3;
+			return new Point($p1->curve, $x3, $y3);
 		} else {
 			throw new ErrorException('Elliptic curves do not match');
 		}
@@ -134,18 +113,18 @@ class Point {
 
 	public static function mul($x2, Point $p1) {
 		$e = $x2;
-		if (self::cmp($p1, self::$infinity) == 0) {
-			return self::$infinity;
+		if (self::cmp($p1, self::INFINITY) == 0) {
+			return self::INFINITY;
 		}
 		if ($p1->order != null) {
 			$e = gmp_mod($e, $p1->order);
 		}
 		if (gmp_cmp($e, 0) == 0) {
-			return self::$infinity;
+			return self::INFINITY;
 		}
 		if (gmp_cmp($e, 0) > 0) {
 			$e3 = gmp_mul(3, $e);
-			$negative_self = new Point($p1->curve, $p1->x, gmp_sub(0, $p1->y), $p1->order);
+			$negative_self = new Point($p1->curve, $p1->x, gmp_neg($p1->y), $p1->order);
 			$i = gmp_div(self::leftmost_bit($e3), 2);
 			$result = $p1;
 			while (gmp_cmp($i, 1) > 0) {
@@ -173,8 +152,8 @@ class Point {
 	}
 
 	public static function double(Point $p1) {
-		$p = $p1->curve->getPrime();
-		$a = $p1->curve->getA();
+		$p = $p1->curve->prime;
+		$a = $p1->curve->a;
 		$inverse = gmp_invert(gmp_mul(2, $p1->y), $p);
 		$three_x2 = gmp_mul(3, gmp_pow($p1->x, 2));
 		$l = gmp_mod(gmp_mul(gmp_add($three_x2, $a), $inverse), $p);
@@ -182,16 +161,7 @@ class Point {
 		$y3 = gmp_mod(gmp_sub(gmp_mul($l, gmp_sub($p1->x, $x3)), $p1->y), $p);
 		if (gmp_cmp(0, $y3) > 0)
 			$y3 = gmp_add($p, $y3);
-		$p3 = new Point($p1->curve, $x3, $y3);
-		return $p3;
-	}
-
-	public function getX() {
-		return $this->x;
-	}
-
-	public function getY() {
-		return $this->y;
+		return new Point($p1->curve, $x3, $y3);
 	}
 }
 
@@ -214,8 +184,8 @@ function addr_from_mpk($mpk, $index)
 	// generate the new public key based off master and sequence points
 	$pt = Point::add(new Point($curve, $x, $y), Point::mul($z, $gen));
 	$keystr = pack('H*', '04'
-	        . str_pad(gmp_strval($pt->getX(), 16), 64, '0', STR_PAD_LEFT)
-	        . str_pad(gmp_strval($pt->getY(), 16), 64, '0', STR_PAD_LEFT));
+	        . str_pad(gmp_strval($pt->x, 16), 64, '0', STR_PAD_LEFT)
+	        . str_pad(gmp_strval($pt->y, 16), 64, '0', STR_PAD_LEFT));
 	$vh160 =  '00' . hash('ripemd160', hash('sha256', $keystr, TRUE));
 	$addr = $vh160 . substr(hash('sha256', hash('sha256', pack('H*', $vh160), TRUE)), 0, 8);
 
