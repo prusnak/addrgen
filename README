@@ -16,12 +16,12 @@ PHP usage:
 Ruby usage:
 
 - make sure you have GMP 4.2.0 or later installed
-- make sure you have GMP RubyGem installed
-- require './addrgen' in your script
-- use addr_from_mpk(mpk, idx) function
+- install bitcoin-addrgen via Rubygems
+  (should install required ffi gem as well)
+- require 'bitcoin-addrgen' in your script
+- use BitcoinAddrgen.generate_public_address(mpk, idx) function
   - mpk is your Master Public Key (64 bit = 128 hex digits)
   - idx is numeric address index to use (0, 1, ...)
-  (check test.rb for usage example)
 
 
 Based on:
