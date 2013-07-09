@@ -22,7 +22,115 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 
 require 'digest'
-require 'gmp'
+require 'ffi'
+
+module GMP
+  extend FFI::Library
+  ffi_lib ['gmp', 'libgmp.so.3', 'libgmp.so.10']
+  attach_function :__gmpz_init_set_str, [:pointer, :string, :int], :int
+  attach_function :__gmpz_get_str, [:string, :int, :pointer], :string
+  attach_function :__gmpz_add, [:pointer, :pointer, :pointer], :void
+  attach_function :__gmpz_add_ui, [:pointer, :pointer, :ulong], :void
+  attach_function :__gmpz_and, [:pointer, :pointer, :pointer], :void
+  attach_function :__gmpz_cmp, [:pointer, :pointer], :int
+  attach_function :__gmpz_cmp_si, [:pointer, :long], :int
+  attach_function :__gmpz_fdiv_q_ui, [:pointer, :pointer, :ulong], :ulong
+  attach_function :__gmpz_fdiv_r, [:pointer, :pointer, :pointer], :void
+  attach_function :__gmpz_invert, [:pointer, :pointer, :pointer], :int
+  attach_function :__gmpz_mul, [:pointer, :pointer, :pointer], :void
+  attach_function :__gmpz_mul_si, [:pointer, :pointer, :long], :void
+  attach_function :__gmpz_neg, [:pointer, :pointer], :void
+  attach_function :__gmpz_pow_ui, [:pointer, :pointer, :ulong], :void
+  attach_function :__gmpz_sub, [:pointer, :pointer, :pointer], :void
+end
+
+def gmp_init(str, base)
+  ptr = FFI::MemoryPointer.new :char, 16
+  GMP::__gmpz_init_set_str(ptr, str, base)
+  ptr
+end
+
+def gmp_strval(op, base)
+  GMP::__gmpz_get_str(nil, base, op)
+end
+
+def gmp_add(a, b)
+  ptr = FFI::MemoryPointer.new :char, 16
+  if a.instance_of? Fixnum
+    GMP::__gmpz_add_ui(ptr, b, a)
+  elsif b.instance_of? Fixnum
+    GMP::__gmpz_add_ui(ptr, a, b)
+  else
+    GMP::__gmpz_add(ptr, a, b)
+  end
+  ptr
+end
+
+def gmp_and(a, b)
+  ptr = FFI::MemoryPointer.new :char, 16
+  GMP::__gmpz_and(ptr, a, b)
+  ptr
+end
+
+def gmp_cmp(a, b)
+  if a.instance_of? Fixnum and b.instance_of? Fixnum
+    a <=> b
+  elsif a.instance_of? Fixnum
+    -GMP::__gmpz_cmp_si(b, a)
+  elsif b.instance_of? Fixnum
+    GMP::__gmpz_cmp_si(a, b)
+  else
+    GMP::__gmpz_cmp(a, b)
+  end
+end
+
+def gmp_div(a, b)
+  ptr = FFI::MemoryPointer.new :char, 16
+  GMP::__gmpz_fdiv_q_ui(ptr, a, b)
+  ptr
+end
+
+def gmp_invert(a, b)
+  ptr = FFI::MemoryPointer.new :char, 16
+  GMP::__gmpz_invert(ptr, a, b)
+  ptr
+end
+
+def gmp_mod(a, b)
+  ptr = FFI::MemoryPointer.new :char, 16
+  GMP::__gmpz_fdiv_r(ptr, a, b)
+  ptr
+end
+
+def gmp_mul(a, b)
+  ptr = FFI::MemoryPointer.new :char, 16
+  if a.instance_of? Fixnum
+    GMP::__gmpz_mul_si(ptr, b, a)
+  elsif b.instance_of? Fixnum
+    GMP::__gmpz_mul_si(ptr, a, b)
+  else
+    GMP::__gmpz_mul(ptr, a, b)
+  end
+  ptr
+end
+
+def gmp_neg(a)
+  ptr = FFI::MemoryPointer.new :char, 16
+  GMP::__gmpz_neg(ptr, a)
+  ptr
+end
+
+def gmp_pow(a, b)
+  ptr = FFI::MemoryPointer.new :char, 16
+  GMP::__gmpz_pow_ui(ptr, a, b)
+  ptr
+end
+
+def gmp_sub(a, b)
+  ptr = FFI::MemoryPointer.new :char, 16
+  GMP::__gmpz_sub(ptr, a, b)
+  ptr
+end
 
 module BitcoinAddrgen
   class Curve
@@ -36,15 +144,11 @@ module BitcoinAddrgen
     end
 
     def contains(x, y)
-      GMP::Z.new(0) == (y**2 - (x ** 3 + @a * x + @b)).fmod(@prime)
+      gmp_cmp(gmp_mod(gmp_sub(gmp_pow(y, 2), gmp_add(gmp_add(gmp_pow(x, 3), gmp_mul(@a, x)), @b)), @prime), 0) == 0
     end
 
     def self.cmp(cp1, cp2)
-      if cp1.a == cp2.a and cp1.b == cp2.b and cp1.prime == cp2.prime
-        return 0
-      else
-        return 1
-      end
+      gmp_cmp(cp1.a, cp2.a) or gmp_cmp(cp1.b, cp.b) or gmp_cmp(cp.prime, cp.prime)
     end
 
   end
@@ -59,7 +163,7 @@ module BitcoinAddrgen
       @y = y
       @order = order
       if @curve and @curve.instance_of?(Curve)
-        raise Exception, 'Curve does not contain point' if !@curve.contains(@x, @y)
+        raise Exception, 'Curve does not contain point' if not @curve.contains(@x, @y)
         if @order != nil
           raise Exception, 'Self*Order must equal infinity' if (Point.cmp(Point.mul(order, self), :infinity) != 0)
         end
@@ -75,11 +179,7 @@ module BitcoinAddrgen
         return 1 if p1.instance_of?(Point)
         return 0 if !p1.instance_of?(Point)
       end
-      if p1.x == p2.x and p1.y == p2.y and Curve.cmp(p1.curve, p2.curve)
-        return 0
-      else
-        return 1
-      end
+      gmp_cmp(p1.x, p2.x) or gmp_cmp(p1.y, p2.y) or Curve.cmp(p1.curve, p2.curve)
     end
 
     def self.add(p1, p2)
@@ -89,17 +189,17 @@ module BitcoinAddrgen
       return :infinity if Point.cmp(p1, :infinity) == 0 and Point.cmp(p2, :infinity) == 0
 
       if Curve.cmp(p1.curve, p2.curve) == 0
-        if p1.x == p2.x
-          if (p1.y + p2.y).fmod(p1.curve.prime) == 0
+        if gmp_cmp(p1.x, p2.x) == 0
+          if gmp_mod(gmp_add(p1.y, p2.y), p1.curve.prime) == 0
             return :infinity
           else
             return Point.double(p1)
           end
         end
         p = p1.curve.prime
-        l = (p2.y - p1.y) * (p2.x - p1.x).invert(p)
-        x3 = (l ** 2 - p1.x - p2.x).fmod(p)
-        y3 = (l * (p1.x - x3) - p1.y).fmod(p)
+        l = gmp_mul(gmp_sub(p2.y, p1.y), gmp_invert(gmp_sub(p2.x, p1.x), p))
+        x3 = gmp_mod(gmp_sub(gmp_sub(gmp_pow(l, 2), p1.x), p2.x), p)
+        y3 = gmp_mod(gmp_sub(gmp_mul(l, gmp_sub(p1.x, x3)), p1.y), p)
         p3 = Point.new(p1.curve, x3, y3)
         return p3
       else
@@ -110,44 +210,43 @@ module BitcoinAddrgen
     def self.mul(x2, p1)
       e = x2
       return :infinity if Point.cmp(p1, :infinity) == 0
-      e = e.fmod(p1.order) if p1.order != nil
-      return :infinity if e == GMP::Z.new(0)
-      if e > GMP::Z.new(0)
-        e3 = 3 * e
-        negative_self = Point.new(p1.curve, p1.x, -p1.y, p1.order)
-        i = Point.leftmost_bit(e3).tdiv(2)
+      e = gmp_mod(e, p1.order) if p1.order != nil
+      return :infinity if gmp_cmp(e, 0) == 0
+      if gmp_cmp(e, 0) > 0
+        e3 = gmp_mul(3, e)
+        negative_self = Point.new(p1.curve, p1.x, gmp_neg(p1.y), p1.order)
+        i = gmp_div(Point.leftmost_bit(e3), 2)
         result = p1
-        while i > GMP::Z.new(1)
+        while gmp_cmp(i, 1) > 0
           result = Point.double(result)
-          result = Point.add(result, p1) if (e3 & i) != GMP::Z.new(0) and (e & i) == GMP::Z.new(0)
-          result = Point.add(result, negative_self) if (e3 & i) == GMP::Z.new(0) and (e & i) != GMP::Z.new(0)
-          i = i.tdiv(2)
+          result = Point.add(result, p1) if gmp_cmp(gmp_and(e3, i), 0) != 0 and gmp_cmp(gmp_and(e, i), 0) == 0
+          result = Point.add(result, negative_self) if gmp_cmp(gmp_and(e3, i), 0) == 0 and gmp_cmp(gmp_and(e, i), 0) != 0
+          i = gmp_div(i, 2)
         end
         return result
       end
     end
 
     def self.leftmost_bit(x)
-      if x > GMP::Z.new(0)
-        result = GMP::Z.new(1)
-        while result <= x
-          result *= 2
+      if gmp_cmp(x, 0) > 0
+        result = gmp_init('1', 10)
+        while gmp_cmp(result, x) <= 0
+          result = gmp_mul(2, result)
         end
-        return result.tdiv(2)
+        return gmp_div(result, 2)
       end
     end
 
     def self.double(p1)
       p = p1.curve.prime
       a = p1.curve.a
-      inverse = (2 * p1.y).invert(p)
-      three_x2 = 3 * (p1.x ** 2)
-      l = ((three_x2 + a) * inverse).fmod(p)
-      x3 = (l ** 2 - 2 * p1.x).fmod(p)
-      y3 = (l * (p1.x - x3) - p1.y).fmod(p)
-      y3 = p + y3 if 0 > y3
-      p3 = Point.new(p1.curve, x3, y3)
-      p3
+      inverse = gmp_invert(gmp_mul(2, p1.y), p)
+      three_x2 = gmp_mul(3, gmp_pow(p1.x, 2))
+      l = gmp_mod(gmp_mul(gmp_add(three_x2, a), inverse), p)
+      x3 = gmp_mod(gmp_sub(gmp_pow(l, 2), gmp_mul(2, p1.x)), p)
+      y3 = gmp_mod(gmp_sub(gmp_mul(l, gmp_sub(p1.x, x3)), p1.y), p)
+      y3 = gmp_add(p, y3) if (gmp_cmp(0, y3) > 0)
+      return Point.new(p1.curve, x3, y3)
     end
 
   end
@@ -170,26 +269,26 @@ module BitcoinAddrgen
     end
 
     def self.addr_from_mpk(mpk, idx)
-      _p  = GMP::Z.new('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 16)
-      _r  = GMP::Z.new('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141', 16)
-      _b  = GMP::Z.new('0000000000000000000000000000000000000000000000000000000000000007', 16)
-      _Gx = GMP::Z.new('79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798', 16)
-      _Gy = GMP::Z.new('483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8', 16)
+      _p  = gmp_init('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 16)
+      _r  = gmp_init('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141', 16)
+      _b  = gmp_init('0000000000000000000000000000000000000000000000000000000000000007', 16)
+      _Gx = gmp_init('79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798', 16)
+      _Gy = gmp_init('483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8', 16)
       curve = Curve.new(_p, 0, _b)
       gen = Point.new(curve, _Gx, _Gy, _r)
 
       # prepare the input values
-      x = GMP::Z.new(mpk[0, 64], 16)
-      y = GMP::Z.new(mpk[64, 64], 16)
-      z = GMP::Z.new(sha256(sha256_raw(idx.to_s + ':0:' + hex_to_bin(mpk))), 16)
+      x = gmp_init(mpk[0, 64], 16)
+      y = gmp_init(mpk[64, 64], 16)
+      z = gmp_init(sha256(sha256_raw(idx.to_s + ':0:' + hex_to_bin(mpk))), 16)
 
       # generate the new public key based off master and sequence points
       pt = Point.add(Point.new(curve, x, y), Point.mul(z, gen))
-      keystr = hex_to_bin('04' + pt.x.to_s(16).rjust(64, '0') + pt.y.to_s(16).rjust(64, '0'))
+      keystr = hex_to_bin('04' + gmp_strval(pt.x, 16).rjust(64, '0') + gmp_strval(pt.y, 16).rjust(64, '0'))
       vh160 =  '00' + ripemd160(sha256_raw(keystr))
       addr = vh160 + sha256(sha256_raw(hex_to_bin(vh160)))[0, 8]
 
-      num = GMP::Z.new(addr, 16).to_s(58)
+      num = gmp_strval(gmp_init(addr, 16), 58)
       num = num.tr('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv', '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz')
 
       pad = ''
