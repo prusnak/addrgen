@@ -13,6 +13,15 @@ PHP usage:
   (check test.php for usage example)
 
 
+Python usage:
+- install gmpy python package
+- import addrgen in your script
+- use addr_from_mpk(mpk, idx) function
+  - mpk is your Master Public Key (64 bit = 128 hex digits)
+  - idx is numeric address index to use (0, 1, ...)
+  (check test.py for usage example)
+
+
 Ruby usage:
 
 - make sure you have GMP 4.2.0 or later installed
