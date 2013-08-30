@@ -32,6 +32,7 @@ module GMP
   attach_function :__gmpz_add, [:pointer, :pointer, :pointer], :void
   attach_function :__gmpz_add_ui, [:pointer, :pointer, :ulong], :void
   attach_function :__gmpz_and, [:pointer, :pointer, :pointer], :void
+  attach_function :__gmpz_clear, [:pointer], :void
   attach_function :__gmpz_cmp, [:pointer, :pointer], :int
   attach_function :__gmpz_cmp_si, [:pointer, :long], :int
   attach_function :__gmpz_fdiv_q_ui, [:pointer, :pointer, :ulong], :ulong
@@ -42,10 +43,25 @@ module GMP
   attach_function :__gmpz_neg, [:pointer, :pointer], :void
   attach_function :__gmpz_pow_ui, [:pointer, :pointer, :ulong], :void
   attach_function :__gmpz_sub, [:pointer, :pointer, :pointer], :void
+
+  @ptrlist = []
+
+  def self.collect(ptr)
+    @ptrlist << ptr
+  end
+
+  def self.collect_clear
+    @ptrlist.each { |p|
+      GMP::__gmpz_clear(p)
+    }
+    @ptrlist = []
+  end
+
 end
 
 def gmp_init(str, base)
   ptr = FFI::MemoryPointer.new :char, 16
+  GMP::collect(ptr)
   GMP::__gmpz_init_set_str(ptr, str, base)
   ptr
 end
@@ -56,6 +72,7 @@ end
 
 def gmp_add(a, b)
   ptr = FFI::MemoryPointer.new :char, 16
+  GMP::collect(ptr)
   if a.instance_of? Fixnum
     GMP::__gmpz_add_ui(ptr, b, a)
   elsif b.instance_of? Fixnum
@@ -68,6 +85,7 @@ end
 
 def gmp_and(a, b)
   ptr = FFI::MemoryPointer.new :char, 16
+  GMP::collect(ptr)
   GMP::__gmpz_and(ptr, a, b)
   ptr
 end
@@ -86,24 +104,28 @@ end
 
 def gmp_div(a, b)
   ptr = FFI::MemoryPointer.new :char, 16
+  GMP::collect(ptr)
   GMP::__gmpz_fdiv_q_ui(ptr, a, b)
   ptr
 end
 
 def gmp_invert(a, b)
   ptr = FFI::MemoryPointer.new :char, 16
+  GMP::collect(ptr)
   GMP::__gmpz_invert(ptr, a, b)
   ptr
 end
 
 def gmp_mod(a, b)
   ptr = FFI::MemoryPointer.new :char, 16
+  GMP::collect(ptr)
   GMP::__gmpz_fdiv_r(ptr, a, b)
   ptr
 end
 
 def gmp_mul(a, b)
   ptr = FFI::MemoryPointer.new :char, 16
+  GMP::collect(ptr)
   if a.instance_of? Fixnum
     GMP::__gmpz_mul_si(ptr, b, a)
   elsif b.instance_of? Fixnum
@@ -116,18 +138,21 @@ end
 
 def gmp_neg(a)
   ptr = FFI::MemoryPointer.new :char, 16
+  GMP::collect(ptr)
   GMP::__gmpz_neg(ptr, a)
   ptr
 end
 
 def gmp_pow(a, b)
   ptr = FFI::MemoryPointer.new :char, 16
+  GMP::collect(ptr)
   GMP::__gmpz_pow_ui(ptr, a, b)
   ptr
 end
 
 def gmp_sub(a, b)
   ptr = FFI::MemoryPointer.new :char, 16
+  GMP::collect(ptr)
   GMP::__gmpz_sub(ptr, a, b)
   ptr
 end
@@ -298,6 +323,7 @@ module BitcoinAddrgen
         n += 2
       end
 
+      GMP::collect_clear
       pad + num
     end
   end

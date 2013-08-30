@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    bitcoin-addrgen (0.0.2)
+    bitcoin-addrgen (0.1.0)
       ffi (~> 1.2.0)
 
 GEM
