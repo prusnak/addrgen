@@ -8,7 +8,7 @@ PHP usage:
 - make sure you have GMP PHP extension installed
 - require 'addrgen.php'; in your script
 - use addr_from_mpk($mpk, $index) function
-  - $mpk is your Master Public Key (64 bit = 128 hex digits)
+  - $mpk is your Master Public Key (64 bytes = 128 hex digits)
   - $index is numeric address index to use (0, 1, ...)
   (check test.php for usage example)
 
@@ -17,7 +17,7 @@ Python usage:
 - install gmpy python package
 - import addrgen in your script
 - use addr_from_mpk(mpk, idx) function
-  - mpk is your Master Public Key (64 bit = 128 hex digits)
+  - mpk is your Master Public Key (64 bytes = 128 hex digits)
   - idx is numeric address index to use (0, 1, ...)
   (check test.py for usage example)
 
@@ -29,7 +29,7 @@ Ruby usage:
   (should install required ffi gem as well)
 - require 'bitcoin-addrgen' in your script
 - use BitcoinAddrgen.generate_public_address(mpk, idx) function
-  - mpk is your Master Public Key (64 bit = 128 hex digits)
+  - mpk is your Master Public Key (64 bytes = 128 hex digits)
   - idx is numeric address index to use (0, 1, ...)
 
 
