@@ -293,7 +293,7 @@ module BitcoinAddrgen
       Digest::RMD160.hexdigest(data)
     end
 
-    def self.addr_from_mpk(mpk, idx)
+    def self.addr_from_mpk(mpk, idx, change = false)
       _p  = gmp_init('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 16)
       _r  = gmp_init('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141', 16)
       _b  = gmp_init('0000000000000000000000000000000000000000000000000000000000000007', 16)
@@ -305,7 +305,8 @@ module BitcoinAddrgen
       # prepare the input values
       x = gmp_init(mpk[0, 64], 16)
       y = gmp_init(mpk[64, 64], 16)
-      z = gmp_init(sha256(sha256_raw(idx.to_s + ':0:' + hex_to_bin(mpk))), 16)
+      branch = change and 1 or 0
+      z = gmp_init(sha256(sha256_raw(idx.to_s + ':' + branch.to_s + ':' + hex_to_bin(mpk))), 16)
 
       # generate the new public key based off master and sequence points
       pt = Point.add(Point.new(curve, x, y), Point.mul(z, gen))

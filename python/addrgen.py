@@ -151,7 +151,7 @@ def ripemd160(s):
 	h.update(s)
 	return h.hexdigest()
 
-def addr_from_mpk(mpk, idx):
+def addr_from_mpk(mpk, idx, change = False):
 	# create the ecc curve
 	_p  = gmpy.mpz('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 16)
 	_r  = gmpy.mpz('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141', 16)
@@ -164,7 +164,8 @@ def addr_from_mpk(mpk, idx):
 	# prepare the input values
 	x = gmpy.mpz(mpk[ 0: 64], 16)
 	y = gmpy.mpz(mpk[64:128], 16)
-	z = gmpy.mpz(sha256(sha256(str(idx) + ':0:' + unhexlify(mpk)).digest()).hexdigest(), 16)
+	branch = change and 1 or 0
+	z = gmpy.mpz(sha256(sha256(str(idx) + ':' + str(branch) + ':' + unhexlify(mpk)).digest()).hexdigest(), 16)
 
 	# generate the new public key based off master and sequence points
 	pt = Point.add(Point(curve, x, y), Point.mul(z, gen))
