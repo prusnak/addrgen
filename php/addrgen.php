@@ -165,7 +165,7 @@ class Point {
 	}
 }
 
-function addr_from_mpk($mpk, $index)
+function addr_from_mpk($mpk, $index, $change = false)
 {
 	// create the ecc curve
 	$_p  = gmp_init('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 16);
@@ -179,7 +179,8 @@ function addr_from_mpk($mpk, $index)
 	// prepare the input values
 	$x = gmp_init(substr($mpk, 0, 64), 16);
 	$y = gmp_init(substr($mpk, 64, 64), 16);
-	$z = gmp_init(hash('sha256', hash('sha256', $index . ':0:' . pack('H*', $mpk), TRUE)), 16);
+	$branch = $change ? 1 : 0;
+	$z = gmp_init(hash('sha256', hash('sha256', "$index:$branch:" . pack('H*', $mpk), TRUE)), 16);
 
 	// generate the new public key based off master and sequence points
 	$pt = Point::add(new Point($curve, $x, $y), Point::mul($z, $gen));
