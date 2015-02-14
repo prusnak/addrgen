@@ -81,4 +81,32 @@ describe BitcoinAddrgen do
 
   end
 
+  context "generate testnet address" do
+    subject do
+      BitcoinAddrgen.generate_public_address(master_public_key, address_index, false, :testnet)
+    end
+
+    context "with address index 0" do
+      let(:address_index) { 0 }
+      it "generates the correct public address" do
+        expect(subject).to eq('mhkcb4nNzHnSNMRY791jAZVRTtnQa3QKT3')
+      end
+    end
+
+    context "with address index 1" do
+      let(:address_index) { 1 }
+      it "generates the correct public address" do
+        expect(subject).to eq('mq5TPKMkgWAFXQBUcF6SsL1Hc5jdBFy2q7')
+      end
+    end
+
+    context "with address index 1" do
+      let(:address_index) { 2 }
+      it "generates the correct public address" do
+        expect(subject).to eq('n1dNwmWqRaQwKepFgxQQSEd2yoka4B85oo')
+      end
+    end
+
+  end
+
 end

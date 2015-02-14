@@ -277,6 +277,9 @@ module BitcoinAddrgen
   end
 
   class Addrgen
+
+    VERSION_BYTES = { bitcoin: '00', testnet: '6f' }
+
     def self.hex_to_bin(s)
       [s].pack('H*')
     end
@@ -293,7 +296,7 @@ module BitcoinAddrgen
       Digest::RMD160.hexdigest(data)
     end
 
-    def self.addr_from_mpk(mpk, idx, change = false)
+    def self.addr_from_mpk(mpk, idx, change = false, version = :bitcoin)
       _p  = gmp_init('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 16)
       _r  = gmp_init('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141', 16)
       _b  = gmp_init('0000000000000000000000000000000000000000000000000000000000000007', 16)
@@ -310,7 +313,8 @@ module BitcoinAddrgen
       # generate the new public key based off master and sequence points
       pt = Point.add(Point.new(curve, x, y), Point.mul(z, gen))
       keystr = hex_to_bin('04' + gmp_strval(pt.x, 16).rjust(64, '0') + gmp_strval(pt.y, 16).rjust(64, '0'))
-      vh160 =  '00' + ripemd160(sha256_raw(keystr))
+
+      vh160 = VERSION_BYTES[version.to_sym] + ripemd160(sha256_raw(keystr))
       addr = vh160 + sha256(sha256_raw(hex_to_bin(vh160)))[0, 8]
 
       num = gmp_strval(gmp_init(addr, 16), 58)

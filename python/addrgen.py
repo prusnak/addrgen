@@ -26,6 +26,8 @@ import hashlib
 import gmpy
 from binascii import unhexlify
 
+VERSION_BYTES = { 'bitcoin': '00', 'testnet': '6f' }
+
 class Curve:
 
 	def __init__(self, prime, a, b):
@@ -151,7 +153,7 @@ def ripemd160(s):
 	h.update(s)
 	return h.hexdigest()
 
-def addr_from_mpk(mpk, idx, change = False):
+def addr_from_mpk(mpk, idx, change = False, version = 'bitcoin'):
 	# create the ecc curve
 	_p  = gmpy.mpz('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 16)
 	_r  = gmpy.mpz('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141', 16)
@@ -172,7 +174,7 @@ def addr_from_mpk(mpk, idx, change = False):
 
 	keystr = unhexlify('04' + hex(pt.x)[2:].zfill(64) + hex(pt.y)[2:].zfill(64))
 
-	vh160 = '00' + ripemd160(sha256(keystr).digest())
+	vh160 = VERSION_BYTES[version] + ripemd160(sha256(keystr).digest())
 	addr = vh160 + sha256(sha256(unhexlify(vh160)).digest()).hexdigest()[0:8]
 
 	__b58chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
