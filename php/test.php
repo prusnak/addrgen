@@ -13,6 +13,10 @@ foreach (array(100, 65537, 4294967296) as $i) {
 	print addr_from_mpk($mpk, $i) . "\n";
 }
 
+foreach (array(0, 1, 2) as $i) {
+	print addr_from_mpk($mpk, $i, true) . "\n";
+}
+
 /*
 
 should print:
@@ -30,6 +34,9 @@ should print:
 1LNUmaHWMybREGszq8wiDTULJR3tvsjx7
 1JnjQQ5LcMDYDLNd31bEU2L5wZ9fipvEQ6
 1KJwuVF7hm7EoT1AYJas2WM3yodCzsEhAQ
+14LQiAFjVBePtffagNtsDW9TFY21Mpngka
+15GTr4N3vUDGmSrFX2XXGvwhnWqG1LzCTi
+1Q4hqqSSTTpbcr4MoigFDFhDLMMP13NorG
 
 */
 

@@ -305,8 +305,7 @@ module BitcoinAddrgen
       # prepare the input values
       x = gmp_init(mpk[0, 64], 16)
       y = gmp_init(mpk[64, 64], 16)
-      branch = change and 1 or 0
-      z = gmp_init(sha256(sha256_raw(idx.to_s + ':' + branch.to_s + ':' + hex_to_bin(mpk))), 16)
+      z = gmp_init(sha256(sha256_raw("#{idx}:#{change ? 1 : 0}:#{hex_to_bin(mpk)}")), 16)
 
       # generate the new public key based off master and sequence points
       pt = Point.add(Point.new(curve, x, y), Point.mul(z, gen))
