@@ -8,6 +8,8 @@ for i in range(10):
 	print addr_from_mpk(mpk, i)
 for i in [100, 65537, 4294967296]:
 	print addr_from_mpk(mpk, i)
+for i in range(3):
+	print addr_from_mpk(mpk, i, True)
 
 # should print:
 #
@@ -24,3 +26,6 @@ for i in [100, 65537, 4294967296]:
 # 1LNUmaHWMybREGszq8wiDTULJR3tvsjx7
 # 1JnjQQ5LcMDYDLNd31bEU2L5wZ9fipvEQ6
 # 1KJwuVF7hm7EoT1AYJas2WM3yodCzsEhAQ
+# 14LQiAFjVBePtffagNtsDW9TFY21Mpngka
+# 15GTr4N3vUDGmSrFX2XXGvwhnWqG1LzCTi
+# 1Q4hqqSSTTpbcr4MoigFDFhDLMMP13NorG
