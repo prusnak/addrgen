@@ -51,5 +51,20 @@ class AddrgenTest(unittest.TestCase):
 		self.assertEqual(addr, '1Q4hqqSSTTpbcr4MoigFDFhDLMMP13NorG')
 
 
+	# testnet addresses
+
+	def test_testnet_address_0(self):
+		addr = addr_from_mpk(self.mpk, 0, False, 'testnet')
+		self.assertEqual(addr, 'mhkcb4nNzHnSNMRY791jAZVRTtnQa3QKT3')
+
+	def test_testnet_address_1(self):
+		addr = addr_from_mpk(self.mpk, 1, False, 'testnet')
+		self.assertEqual(addr, 'mq5TPKMkgWAFXQBUcF6SsL1Hc5jdBFy2q7')
+
+	def test_testnet_address_2(self):
+		addr = addr_from_mpk(self.mpk, 2, False, 'testnet')
+		self.assertEqual(addr, 'n1dNwmWqRaQwKepFgxQQSEd2yoka4B85oo')
+
+
 if __name__ == '__main__':
 	unittest.main()
