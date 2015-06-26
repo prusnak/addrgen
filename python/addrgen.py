@@ -167,8 +167,11 @@ def addr_from_mpk(mpk, idx, change = False, version = 'bitcoin'):
 	x = gmpy.mpz(mpk[ 0: 64], 16)
 	y = gmpy.mpz(mpk[64:128], 16)
 	branch = change and 1 or 0
-	z = gmpy.mpz(sha256(sha256(str(idx) + ':' + str(branch) + ':' + unhexlify(mpk)).digest()).hexdigest(), 16)
-
+	if sys.version_info.major == 2:
+		z = gmpy.mpz(sha256(sha256(str(idx) + ':' + str(branch) + ':' + unhexlify(mpk)).digest()).hexdigest(), 16)
+	elif sys.version_info.major == 3:
+		z = gmpy.mpz(sha256(sha256(bytes(str(idx),'utf-8') + bytes(':','utf-8') + bytes(str(branch),'utf-8') + bytes(':','utf-8') + unhexlify(mpk)).digest()).hexdigest(), 16)
+	
 	# generate the new public key based off master and sequence points
 	pt = Point.add(Point(curve, x, y), Point.mul(z, gen))
 
